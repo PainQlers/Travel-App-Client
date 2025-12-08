@@ -1,13 +1,9 @@
 <script setup lang="ts">
-import { computed } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { useRouter } from "vue-router";
 import { useAuthStore } from "../stores/auth";
 
 const router = useRouter();
-const route = useRoute();
 const auth = useAuthStore();
-
-const activePath = computed(() => route.name);
 
 function handleLogout() {
   auth.logout();
