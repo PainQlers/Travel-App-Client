@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, watch, computed } from "vue";
 import type { Trip } from "../data/trips";
+import { useUserStore } from "../stores/users";
 
 interface Props {
   trip: Trip;
@@ -15,6 +16,8 @@ const emit = defineEmits<{
 }>();
 
 const imageErrors = ref<Set<number>>(new Set());
+const userStore = useUserStore();
+const ownerName = ref<string | null>(null);
 
 function handleEdit() {
   emit("edit", props.trip);
@@ -34,6 +37,50 @@ function isValidImageUrl(url: string): boolean {
   // Check if it's a valid URL (starts with http/https or data:)
   return /^(https?:|data:)/.test(url);
 }
+
+async function loadOwnerName(authorId?: string) {
+  ownerName.value = null;
+  if (!authorId) return;
+  try {
+    const id = String(authorId);
+    // Try cached user first
+    const cached = userStore.getById(id);
+    if (cached) {
+      ownerName.value = cached.displayName;
+      return;
+    }
+
+    const user = await userStore.loadUser(id);
+    ownerName.value = user?.displayName ?? null;
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.warn("Failed to load owner displayName", e);
+    ownerName.value = null;
+  }
+}
+
+// Watch for changes to the trip's authorId so we update the owner name
+watch(
+  () => props.trip.authorId,
+  (id) => {
+    // load owner name when authorId is present
+    loadOwnerName(id as string | undefined);
+  },
+  { immediate: true }
+);
+
+const MAX_TITLE_LENGTH = 85;
+const MAX_DESCRIPTION_LENGTH = 150;
+
+const truncatedTitle = computed(() => {
+  const t = props.trip?.title ?? "";
+  return t.length > MAX_TITLE_LENGTH ? t.slice(0, MAX_TITLE_LENGTH - 3) + "..." : t;
+});
+
+const truncatedDescription = computed(() => {
+  const d = props.trip?.description ?? "";
+  return d.length > MAX_DESCRIPTION_LENGTH ? d.slice(0, MAX_DESCRIPTION_LENGTH - 3) + "..." : d;
+});
 </script>
 
 <template>
@@ -59,8 +106,8 @@ function isValidImageUrl(url: string): boolean {
           <p class="text-xs uppercase tracking-[0.2em] text-brand/60">
             {{ trip.province }}
           </p>
-          <h3 class="text-xl font-semibold text-slate-900">
-            {{ trip.title }}
+          <h3 class="text-xl font-semibold text-slate-900" :title="trip.title && trip.title.length > MAX_TITLE_LENGTH ? trip.title : ''">
+            {{ truncatedTitle }}
           </h3>
         </div>
         <router-link
@@ -72,8 +119,8 @@ function isValidImageUrl(url: string): boolean {
         </router-link>
       </div>
 
-      <p class="mt-2 line-clamp-2 text-sm text-slate-600">
-        {{ trip.description }}
+      <p class="mt-2 line-clamp-2 text-sm text-slate-600" :title="trip.description && trip.description.length > MAX_DESCRIPTION_LENGTH ? trip.description : ''">
+        {{ truncatedDescription }}
       </p>
 
       <div class="mt-3 flex flex-wrap gap-2">
@@ -87,9 +134,9 @@ function isValidImageUrl(url: string): boolean {
       </div>
 
       <div class="mt-4 flex flex-1 items-end justify-between text-xs text-slate-500">
-        <div v-if="showOwner" class="font-medium">
-          โดย {{ trip.ownerEmail }}
-        </div>
+            <div v-if="showOwner" class="font-medium">
+              โดย {{ ownerName ?? trip.ownerEmail }}
+            </div>
 
         <div class="flex gap-3" v-if="showActions">
           <button
@@ -130,4 +177,6 @@ function isValidImageUrl(url: string): boolean {
     </div>
   </article>
 </template>
+
+<!-- merged watch into the main <script setup> to avoid duplicate blocks -->
 

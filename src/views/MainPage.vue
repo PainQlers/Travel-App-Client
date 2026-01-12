@@ -4,6 +4,7 @@ import { useTripStore } from "../stores/trips";
 import TripCard from "../components/TripCard.vue";
 import { onMounted } from "vue";
 import { useAuthStore } from "../stores/auth";
+import { ChevronDownIcon } from "@heroicons/vue/24/outline";
 
 const tripStore = useTripStore();
 const auth = useAuthStore();
@@ -84,15 +85,19 @@ function clearFilters() {
               />
             </div>
             <div class="flex flex-wrap gap-3">
-              <select
-                v-model="province"
-                class="min-w-[180px] rounded-3xl border border-transparent bg-white/80 px-5 py-3 text-sm shadow"
-              >
-                <option value="">ทุกจังหวัด</option>
-                <option v-for="item in provinces" :key="item" :value="item">
-                  {{ item }}
-                </option>
-              </select>
+              <div class="relative">
+                <select
+                  v-model="province"
+                  class="min-w-[180px] rounded-3xl border border-transparent bg-white/80 px-5 py-3 pr-10 text-sm shadow appearance-none focus:border-brand focus:outline-none focus:ring-4 focus:ring-brand/20"
+                >
+                  <option value="">ทุกจังหวัด</option>
+                  <option v-for="item in provinces" :key="item" :value="item">
+                    {{ item }}
+                  </option>
+                </select>
+                <ChevronDownIcon class="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
+              </div>
+
               <button
                 type="button"
                 class="rounded-full border border-white/60 px-5 py-3 text-sm font-semibold text-brand"
