@@ -4,7 +4,6 @@ import { useTripStore } from "../stores/trips";
 import TripCard from "../components/TripCard.vue";
 import { onMounted } from "vue";
 import { useAuthStore } from "../stores/auth";
-import { useUserStore } from "../stores/users";
 import { ChevronDownIcon } from "@heroicons/vue/24/outline";
 
 const tripStore = useTripStore();
