@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from "vue";
+import { ref, watch, computed } from "vue";
 import type { Trip } from "../data/trips";
 import { useUserStore } from "../stores/users";
 
@@ -68,6 +68,19 @@ watch(
   },
   { immediate: true }
 );
+
+const MAX_TITLE_LENGTH = 85;
+const MAX_DESCRIPTION_LENGTH = 150;
+
+const truncatedTitle = computed(() => {
+  const t = props.trip?.title ?? "";
+  return t.length > MAX_TITLE_LENGTH ? t.slice(0, MAX_TITLE_LENGTH - 3) + "..." : t;
+});
+
+const truncatedDescription = computed(() => {
+  const d = props.trip?.description ?? "";
+  return d.length > MAX_DESCRIPTION_LENGTH ? d.slice(0, MAX_DESCRIPTION_LENGTH - 3) + "..." : d;
+});
 </script>
 
 <template>
@@ -93,8 +106,8 @@ watch(
           <p class="text-xs uppercase tracking-[0.2em] text-brand/60">
             {{ trip.province }}
           </p>
-          <h3 class="text-xl font-semibold text-slate-900">
-            {{ trip.title }}
+          <h3 class="text-xl font-semibold text-slate-900" :title="trip.title && trip.title.length > MAX_TITLE_LENGTH ? trip.title : ''">
+            {{ truncatedTitle }}
           </h3>
         </div>
         <router-link
@@ -106,8 +119,8 @@ watch(
         </router-link>
       </div>
 
-      <p class="mt-2 line-clamp-2 text-sm text-slate-600">
-        {{ trip.description }}
+      <p class="mt-2 line-clamp-2 text-sm text-slate-600" :title="trip.description && trip.description.length > MAX_DESCRIPTION_LENGTH ? trip.description : ''">
+        {{ truncatedDescription }}
       </p>
 
       <div class="mt-3 flex flex-wrap gap-2">

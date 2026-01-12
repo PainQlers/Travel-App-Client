@@ -221,28 +221,66 @@ function selectProvince(p: string) {
 
 function highlightNext() {
   const len = filteredProvinces.value.length;
-  if (len === 0) return;
-  highlightedIndex.value = (highlightedIndex.value + 1 + len) % len;
+  if (len === 0) {
+    highlightedIndex.value = -1;
+    return;
+  }
+  if (!showProvinceDropdown.value) showProvinceDropdown.value = true;
+  // start from -1 so the first Next goes to 0
+  highlightedIndex.value = (Math.max(highlightedIndex.value, -1) + 1) % len;
+  // Clamp just in case
+  if (highlightedIndex.value < 0 || highlightedIndex.value >= len) highlightedIndex.value = 0;
 }
 
 function highlightPrev() {
   const len = filteredProvinces.value.length;
-  if (len === 0) return;
-  highlightedIndex.value = (highlightedIndex.value - 1 + len) % len;
+  if (len === 0) {
+    highlightedIndex.value = -1;
+    return;
+  }
+  if (!showProvinceDropdown.value) showProvinceDropdown.value = true;
+  const current = highlightedIndex.value;
+  const prev = (current - 1 + len) % len;
+  highlightedIndex.value = prev;
+  if (highlightedIndex.value < 0 || highlightedIndex.value >= len) highlightedIndex.value = len - 1;
 }
 
 function selectHighlighted() {
+  const list = filteredProvinces.value;
+  const len = list.length;
   const idx = highlightedIndex.value;
-  if (idx >= 0 && idx < filteredProvinces.value.length) {
-    selectProvince(filteredProvinces.value[idx]);
-  } else if (filteredProvinces.value.length === 1) {
-    selectProvince(filteredProvinces.value[0]);
-  } else {
-    // No selection, validate current text
+
+  if (len === 0) {
     touched.province = true;
     validateProvince();
     showProvinceDropdown.value = false;
+    highlightedIndex.value = -1;
+    return;
   }
+
+  if (idx >= 0 && idx < len) {
+    const p = list[idx];
+    if (p) {
+      selectProvince(p);
+      highlightedIndex.value = -1;
+      return;
+    }
+  }
+
+  if (len === 1) {
+    const first = list[0];
+    if (first) {
+      selectProvince(first);
+      highlightedIndex.value = -1;
+      return;
+    }
+  }
+
+  // No selection, validate current text
+  touched.province = true;
+  validateProvince();
+  showProvinceDropdown.value = false;
+  highlightedIndex.value = -1;
 }
 
 function handleClickOutside(e: MouseEvent) {
@@ -295,6 +333,18 @@ watch(
   () => form.longitude,
   () => {
     if (touched.longitude) validateLongitude();
+  }
+);
+
+// Ensure highlightedIndex is always valid when the filtered list changes
+watch(
+  () => filteredProvinces.value.length,
+  (len) => {
+    if (len === 0) {
+      highlightedIndex.value = -1;
+    } else if (highlightedIndex.value >= len) {
+      highlightedIndex.value = len - 1;
+    }
   }
 );
 
@@ -498,7 +548,7 @@ function handleSubmit() {
               @keydown.down.prevent="highlightNext"
               @keydown.up.prevent="highlightPrev"
               @keydown.enter.prevent="selectHighlighted"
-              class="mt-1 w-full rounded-2xl border border-slate-400 px-4 py-3 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30"
+              class="mt-1 w-full rounded-2xl border border-slate-400 px-3 py-3 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30"
             />
 
             <ul
